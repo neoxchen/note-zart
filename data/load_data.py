@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import pretty_midi as pm
 from mido.midifiles.meta import KeySignatureError
+from processing.utils import *
 
 from streaming.midi_objects import MidiSong
 
@@ -17,6 +18,14 @@ DATASET_INFO = {
     "ADL": {
         "path": "adl-piano-midi",
         "glob_params": "Classical/**/**/*.mid*"
+    },
+    "MOZART_SMALL": {
+        "path": "mozart",
+        "glob_params": "*.mid*"
+    },
+    "BEETHOVEN_SMALL": {
+        "path": "beeth",
+        "glob_params": "*.mid*"
     }
 }
 
@@ -91,6 +100,23 @@ def load_pitch_data(use_cache=False):
 
     data = np.array(data)
     with open(f"{CACHE_PATH}/pitch_only_chunk_{CHUNK_SIZE}.npy", "wb") as f:
+        np.save(f, data)
+    return data
+
+def load_midi_events(use_cache=False):
+    if use_cache:
+        with open(f"{CACHE_PATH}/midi_events.npy", "rb") as f:
+            data = np.load(f)
+        return data
+
+    paths = get_all_files(dataset_name="ADL")
+    data = []
+    for path in paths:
+        events = midi2event(path)
+        data.append(events)
+
+    data = np.array(data)
+    with open(f"{CACHE_PATH}/midi_events.npy", "wb") as f:
         np.save(f, data)
     return data
 
