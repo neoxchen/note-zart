@@ -29,21 +29,24 @@ DATASET_INFO = {
 }
 
 CACHE_PATH = "C:/One/CMU/DeepLearning/note-zart/data/caches"
+TEMP_PATH = "C:/One/CMU/DeepLearning/note-zart/data/temp"
 
 
-def test_play(file_name):
+def test_play(song):
     """
     Use the PyGame library to play the MIDI file (out loud)
     Args:
-        file_name (str): path to the MIDI file
+        song (MidiSong): song object
     """
     import pygame
+    path = f"{TEMP_PATH}/test_play.mid"
+    song.save(path)
 
-    print(f"Test playing MIDI file: {file_name}...")
+    print(f"Test playing MIDI song...")
     if not pygame.mixer.init():
         pygame.mixer.init()
     clock = pygame.time.Clock()
-    pygame.mixer.music.load(file_name)
+    pygame.mixer.music.load(path)
     pygame.mixer.music.play()
     while pygame.mixer.music.get_busy():
         clock.tick(30)
@@ -64,7 +67,7 @@ def get_all_files(dataset_name="ADL"):
 def parse_midi(path):
     try:
         midi = pm.PrettyMIDI(path)
-    except FileNotFoundError | KeySignatureError:
+    except OSError | KeySignatureError:
         return None
     return midi
 

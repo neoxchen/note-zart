@@ -4,7 +4,6 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/models/training_checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/data/caches" />
       <excludeFolder url="file://$MODULE_DIR$/output" />
       <excludeFolder url="file://$MODULE_DIR$/models/saved_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/models/.ipynb_checkpoints" />

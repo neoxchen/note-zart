@@ -12,6 +12,38 @@ from streaming.midi_objects import MidiNote, MidiSong
 
 
 class MidiUi:
+
+    def __init__(self, screen_width=1920, screen_height=1080):
+        print("Initializing system...")
+        pg.init()
+        pg.font.init()
+        pg.fastevent.init()
+        pg_midi.init()
+
+        self.screen = pg.display.set_mode(size=(screen_width, screen_height))
+
+        # Configure I/O
+        self.midi_input = get_midi_input()
+        self.midi_out = pg_midi.Output(pg_midi.get_default_output_id())
+        self.midi_out.set_instrument(25, channel=0)  # ID 25 = acoustic guitar (steel)
+        self.midi_out.set_instrument(22, channel=1)  # ID 22 = harmonica
+
+        # Channel 5-15 are reserved for autoplay
+        for a in range(11, 15 + 1, 1):
+            self.midi_out.set_instrument(0, channel=a)  # ID 0 = grand acoustic piano
+
+        # Configure MIDI queues
+        # - channel => list
+        self.midi_queue = {}
+
+        # Configure UI display content
+        self.manual_active_notes = defaultdict(set)
+        self.auto_active_notes = defaultdict(set)
+
+        print("System started!")
+        self.is_active = True
+        self.main_loop()
+
     def update(self):
         """ Called every tick until Ctrl+C is detected"""
         # Handle MIDI events
@@ -36,37 +68,6 @@ class MidiUi:
                 }).start()
 
         self.update_ui()
-
-    def __init__(self, screen_width=1920, screen_height=1080):
-        print("Initializing system...")
-        pg.init()
-        pg.font.init()
-        pg.fastevent.init()
-        pg_midi.init()
-
-        self.screen = pg.display.set_mode(size=(screen_width, screen_height))
-
-        # Configure I/O
-        self.midi_input = get_midi_input()
-        self.midi_out = pg_midi.Output(pg_midi.get_default_output_id())
-        self.midi_out.set_instrument(25, channel=0)  # ID 25 = acoustic guitar (steel)
-        self.midi_out.set_instrument(22, channel=1)  # ID 22 = harmonica
-
-        # Channel 5-15 are reserved for autoplay
-        for a in range(5, 15 + 1, 1):
-            self.midi_out.set_instrument(0, channel=a)  # ID 0 = grand acoustic piano
-
-        # Configure MIDI queues
-        # - channel => list
-        self.midi_queue = {}
-
-        # Configure UI display content
-        self.manual_active_notes = defaultdict(set)
-        self.auto_active_notes = defaultdict(set)
-
-        print("System started!")
-        self.is_active = True
-        self.main_loop()
 
     def update_ui(self):
         # Wipe screen
@@ -103,14 +104,52 @@ class MidiUi:
         self.screen.blit(text_image, (text_x_start, text_y_start))
         text_y_start += 40
 
-        for a in range(5, 15 + 1, 1):
+        for a in range(11, 15 + 1, 1):
             message = f"Ch#{a:02d}: {', '.join(str(pretty_midi.note_number_to_name(a)) for a in self.auto_active_notes[a])}"
             text_image = pg.font.SysFont("Consolas", 24).render(message, False, get_color_tuple("FFFFFF"))
             self.screen.blit(text_image, (text_x_start, text_y_start))
             text_y_start += 40
 
+        text_y_start = self.draw_staff(text_x_start, text_y_start, "treble")
+        text_y_start = self.draw_staff(text_x_start, text_y_start, "bass")
+
         # Update display
         pg.display.update()
+
+    def draw_staff(self, x, y, staff_type, color="AAAAAA", max_width=600):
+        y_initial = y
+        y += 5
+        for a in range(5):
+            pg.draw.rect(self.screen, get_color_tuple(color), [x, y, max_width, 2])
+            y += 10
+
+        icon = pg.image.load(f"assets/{'treble.png' if staff_type == 'treble' else 'bass.png'}")
+        icon = pg.transform.scale(icon, (50, 50))
+        self.screen.blit(icon, (x, y_initial))
+
+        # Draw notes
+        x_notes = 80
+        width_per_second = 100
+        current_tick = pg.time.get_ticks() // 1000
+        if not self.midi_queue:
+            return y + 10
+
+        limit = 20 // len(self.midi_queue)
+        for channel, queue in self.midi_queue.items():
+            for i, a in enumerate(queue):
+                if i > limit:
+                    break
+
+                note = a[1]
+                if (note.pitch > 64 and staff_type == "bass") or (note.pitch < 64 and staff_type == "treble"):
+                    continue
+                pg.draw.rect(self.screen, get_color_tuple("FFFFFF"),
+                             [x_notes + max(0, note.start - current_tick) * width_per_second,
+                              y_initial + note.pitch - 30,
+                              note.get_duration() * width_per_second, 5])
+                limit += 1
+
+        return y + 10
 
     def queue_length(self):
         return sum(len(a) for a in self.midi_queue.values())
@@ -126,7 +165,7 @@ class MidiUi:
         for i, data in enumerate(song.notes.items()):
             instrument, notes = data
             for note in notes:
-                self.add_note_to_queue(note, channel=5 + i)
+                self.add_note_to_queue(note, channel=11 + i)
 
     # Miscellaneous methods
     def main_loop(self):
@@ -139,12 +178,11 @@ class MidiUi:
                         stop = True
                     elif event.type == pg.KEYDOWN:
                         if event.key == pg.K_z:
+                            self.midi_queue.clear()
                             path = load_data.get_all_files()[random.randint(0, 500)]
                             print(path)
                             midi_song = MidiSong.load(path)
                             self.add_song_to_queue(midi_song)
-                        elif event.key == pg.K_ESCAPE:
-                            self.midi_queue.clear()
 
                 self.update()
         except KeyboardInterrupt:

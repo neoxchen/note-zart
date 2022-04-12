@@ -4,7 +4,7 @@ from mido import KeySignatureError
 
 class MidiNote:
     def __init__(self, pitch, start, end, volume=100):
-        self.pitch = pitch
+        self.pitch = int(pitch)
         self.start = start
         self.end = end
         self.volume = volume
@@ -49,6 +49,17 @@ class MidiSong:
         except KeySignatureError | FileNotFoundError:
             return None
 
+    @staticmethod
+    def from_pitch_array(pitch_array, normalize=128, duration=0.25):
+        song = MidiSong()
+        # Create new MidiInstrument
+        instr = MidiInstrument(pretty_midi.program_to_instrument_name(0), "Acoustic Grand Piano")
+        offset = 0
+        for pitch in pitch_array:
+            song.add_note(instr, MidiNote(pitch * normalize, offset, offset + duration))
+            offset += duration
+        return song
+
     def add_note(self, instrument, note):
         """
         Add a note by an instrument
@@ -84,7 +95,7 @@ class MidiSong:
             pm_instrument = pretty_midi.Instrument(program=pretty_midi.instrument_name_to_program(instr.name))
             for note in notes:
                 pm_note = pretty_midi.Note(
-                    velocity=note.velocity,
+                    velocity=note.volume,
                     pitch=note.pitch,
                     start=note.start,
                     end=note.end
