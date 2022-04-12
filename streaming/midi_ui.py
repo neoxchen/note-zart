@@ -37,7 +37,7 @@ class MidiUi:
 
         self.update_ui()
 
-    def __init__(self, screen_width=1920, screen_height=1080):
+    def __init__(self, screen_width=960, screen_height=540):
         print("Initializing system...")
         pg.init()
         pg.font.init()

@@ -8,7 +8,7 @@ from streaming.midi_objects import MidiSong
 
 CHUNK_SIZE = 64
 
-BASE_DATA_PATH = "C:/One/CMU/DeepLearning/data"
+BASE_DATA_PATH = "D:/CMU HW/17644"
 DATASET_INFO = {
     "MAESTRO": {
         "path": "maestro-v3.0.0",
@@ -17,6 +17,10 @@ DATASET_INFO = {
     "ADL": {
         "path": "adl-piano-midi",
         "glob_params": "Classical/**/**/*.mid*"
+    },
+	"LMD": {
+        "path": "lmd_matched",
+        "glob_params": "*/*/*/*/*.mid"
     }
 }
 
@@ -41,7 +45,7 @@ def test_play(file_name):
         clock.tick(30)
 
 
-def get_all_files(dataset_name="ADL"):
+def get_all_files(dataset_name="LMD"):
     """
     Fetches all files from a particular dataset
     Args:
@@ -50,6 +54,10 @@ def get_all_files(dataset_name="ADL"):
         List(str): paths to the MIDI files
     """
     dataset_info = DATASET_INFO[dataset_name]
+    print("Enter the BASE_DATA_PATH")
+    base_data_path = input()
+    print(base_data_path)
+    BASE_DATA_PATH =base_data_path
     return glob.glob(f"{BASE_DATA_PATH}/{dataset_info['path']}/{dataset_info['glob_params']}")
 
 

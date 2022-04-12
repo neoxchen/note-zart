@@ -47,7 +47,6 @@ if __name__ == "__main__":
     try:
         sys.path.append(os.path.dirname(__file__))
         from streaming.midi_ui import MidiUi
-
         midi_ui = MidiUi()
     finally:
         sys.path.remove(os.path.dirname(__file__))
