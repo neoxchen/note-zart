@@ -15,7 +15,7 @@ class MidiUi:
     def update(self):
         """ Called every tick until Ctrl+C is detected"""
         # Handle MIDI events
-        if self.midi_input.poll():
+        if self.midi_input and self.midi_input.poll():
             midi_events = self.midi_input.read(1)
             pitch = midi_events[0][0][1]
             volume = midi_events[0][0][2]
@@ -47,7 +47,7 @@ class MidiUi:
         self.screen = pg.display.set_mode(size=(screen_width, screen_height))
 
         # Configure I/O
-        self.midi_input = pg_midi.Input(pg_midi.get_default_input_id())
+        self.midi_input = get_midi_input()
         self.midi_out = pg_midi.Output(pg_midi.get_default_output_id())
         self.midi_out.set_instrument(25, channel=0)  # ID 25 = acoustic guitar (steel)
         self.midi_out.set_instrument(22, channel=1)  # ID 22 = harmonica
@@ -176,6 +176,13 @@ class MidiUi:
             self.manual_active_notes[channel].discard(pitch)
         elif activation == "auto":
             self.auto_active_notes[channel].discard(pitch)
+
+
+def get_midi_input():
+    try:
+        return pg_midi.Input(pg_midi.get_default_input_id())
+    except pg_midi.MidiException:
+        return None
 
 
 def get_color_tuple(color_hex):
