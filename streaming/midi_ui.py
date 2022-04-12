@@ -1,3 +1,5 @@
+import random
+from collections import defaultdict
 from collections import deque
 from threading import Timer
 
@@ -5,11 +7,35 @@ import pretty_midi
 import pygame as pg
 import pygame.midi as pg_midi
 
-from streaming.midi_note import MidiNote
+from data import load_data
+from streaming.midi_objects import MidiNote, MidiSong
 
 
 class MidiUi:
-    midi_queue: dict[int, deque]
+    def update(self):
+        """ Called every tick until Ctrl+C is detected"""
+        # Handle MIDI events
+        if self.midi_input.poll():
+            midi_events = self.midi_input.read(1)
+            pitch = midi_events[0][0][1]
+            volume = midi_events[0][0][2]
+            method = self.note_on if volume != 0 else self.note_off
+            method(pitch, channel=0)  # note: we are ignoring volume for now
+
+        # Play queued notes
+        for channel, queue in self.midi_queue.items():
+            while queue:
+                start_time, note = queue[0]
+                if start_time > pg.time.get_ticks():
+                    break
+                queue.popleft()
+                self.note_on(note.pitch, volume=100, activation="auto", channel=channel)
+                Timer(note.get_duration(), self.note_off, [note.pitch], {
+                    "activation": "auto",
+                    "channel": channel
+                }).start()
+
+        self.update_ui()
 
     def __init__(self, screen_width=1920, screen_height=1080):
         print("Initializing system...")
@@ -23,47 +49,24 @@ class MidiUi:
         # Configure I/O
         self.midi_input = pg_midi.Input(pg_midi.get_default_input_id())
         self.midi_out = pg_midi.Output(pg_midi.get_default_output_id())
-        self.midi_out.set_instrument(0, channel=0)  # ID 0 = grand acoustic piano
-        self.midi_out.set_instrument(25, channel=1)  # ID 25 = acoustic guitar (steel)
+        self.midi_out.set_instrument(25, channel=0)  # ID 25 = acoustic guitar (steel)
+        self.midi_out.set_instrument(22, channel=1)  # ID 22 = harmonica
+
+        # Channel 5-15 are reserved for autoplay
+        for a in range(5, 15 + 1, 1):
+            self.midi_out.set_instrument(0, channel=a)  # ID 0 = grand acoustic piano
 
         # Configure MIDI queues
         # - channel => list
         self.midi_queue = {}
 
         # Configure UI display content
-        self.manual_active_notes = set()
-        self.auto_active_notes = set()
+        self.manual_active_notes = defaultdict(set)
+        self.auto_active_notes = defaultdict(set)
 
         print("System started!")
+        self.is_active = True
         self.main_loop()
-
-    def update(self):
-        """ Called every tick until Ctrl+C is detected"""
-        # Detect window closing
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                raise KeyboardInterrupt
-
-        # Handle MIDI events
-        if self.midi_input.poll():
-            midi_events = self.midi_input.read(1)
-            pitch = midi_events[0][0][1]
-            volume = midi_events[0][0][2]
-            method = self.note_on if volume != 0 else self.note_off
-            method(pitch, channel=1)  # note: we are ignoring volume for now
-            if method == self.note_on:
-                self.add_to_queue(MidiNote(pitch + 12, 0, 0.25), channel=0)
-
-        # Play queued notes
-        for channel, queue in self.midi_queue.items():
-            if not queue:
-                continue
-            note: MidiNote = queue[0]
-            queue.popleft()
-            self.note_on(note.pitch, volume=note.volume, activation="auto")
-            Timer(note.get_duration(), self.note_off, [note.pitch], {"activation": "auto"}).start()
-
-        self.update_ui()
 
     def update_ui(self):
         # Wipe screen
@@ -80,37 +83,78 @@ class MidiUi:
         text_y_start += 60
 
         # Manual active notes
-        message = f"Manual: {', '.join(str(pretty_midi.note_number_to_name(a)) for a in self.manual_active_notes)}"
+        message = f"Manual channels:"
         text_image = pg.font.SysFont("Consolas", 24).render(message, False, get_color_tuple("FFFFFF"))
         self.screen.blit(text_image, (text_x_start, text_y_start))
         text_y_start += 40
 
+        # Manual channels
+        for a in [0, 1]:
+            message = f"Ch#{a:02d}: {', '.join(str(pretty_midi.note_number_to_name(a)) for a in self.manual_active_notes[a])}"
+            text_image = pg.font.SysFont("Consolas", 24).render(message, False, get_color_tuple("FFFFFF"))
+            self.screen.blit(text_image, (text_x_start, text_y_start))
+            text_y_start += 40
+        text_y_start += 20
+
+        # Auto channels
         # Autoplay active notes
-        message = f"Auto: {', '.join(str(pretty_midi.note_number_to_name(a)) for a in self.auto_active_notes)}"
+        message = f"Auto channels ({self.queue_length()}):"
         text_image = pg.font.SysFont("Consolas", 24).render(message, False, get_color_tuple("FFFFFF"))
         self.screen.blit(text_image, (text_x_start, text_y_start))
         text_y_start += 40
+
+        for a in range(5, 15 + 1, 1):
+            message = f"Ch#{a:02d}: {', '.join(str(pretty_midi.note_number_to_name(a)) for a in self.auto_active_notes[a])}"
+            text_image = pg.font.SysFont("Consolas", 24).render(message, False, get_color_tuple("FFFFFF"))
+            self.screen.blit(text_image, (text_x_start, text_y_start))
+            text_y_start += 40
 
         # Update display
         pg.display.update()
 
-    def add_to_queue(self, note: MidiNote, channel=0):
+    def queue_length(self):
+        return sum(len(a) for a in self.midi_queue.values())
+
+    def add_note_to_queue(self, note: MidiNote, channel=0):
         if channel not in self.midi_queue:
             self.midi_queue[channel] = deque()
-        self.midi_queue[channel].append(note)
+        self.midi_queue[channel].append((pg.time.get_ticks() + note.start * 1000, note))
+
+    def add_song_to_queue(self, song: MidiSong):
+        if song is None:
+            return
+        for i, data in enumerate(song.notes.items()):
+            instrument, notes = data
+            for note in notes:
+                self.add_note_to_queue(note, channel=5 + i)
 
     # Miscellaneous methods
     def main_loop(self):
-        while True:
-            try:
+        stop = False
+        try:
+            while not stop:
+                # Detect window closing
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        stop = True
+                    elif event.type == pg.KEYDOWN:
+                        if event.key == pg.K_z:
+                            path = load_data.get_all_files()[random.randint(0, 500)]
+                            print(path)
+                            midi_song = MidiSong.load(path)
+                            self.add_song_to_queue(midi_song)
+                        elif event.key == pg.K_ESCAPE:
+                            self.midi_queue.clear()
+
                 self.update()
-            except KeyboardInterrupt:
-                print("Stopped UI loop!")
-                break
+        except KeyboardInterrupt:
+            pass
+        print("Stopped UI loop!")
         self.teardown()
 
     def teardown(self):
         print("Shutting down system...")
+        self.is_active = False
         del self.midi_input
         del self.midi_out
         pg_midi.quit()
@@ -120,16 +164,18 @@ class MidiUi:
     def note_on(self, pitch, volume=100, channel=0, activation="manual"):
         self.midi_out.note_on(pitch, volume, channel=channel)
         if activation == "manual":
-            self.manual_active_notes.add(pitch)
+            self.manual_active_notes[channel].add(pitch)
         elif activation == "auto":
-            self.auto_active_notes.add(pitch)
+            self.auto_active_notes[channel].add(pitch)
 
     def note_off(self, pitch, volume=100, channel=0, activation="manual"):
+        if not self.is_active:
+            return
         self.midi_out.note_off(pitch, volume, channel=channel)
         if activation == "manual":
-            self.manual_active_notes.discard(pitch)
+            self.manual_active_notes[channel].discard(pitch)
         elif activation == "auto":
-            self.auto_active_notes.discard(pitch)
+            self.auto_active_notes[channel].discard(pitch)
 
 
 def get_color_tuple(color_hex):

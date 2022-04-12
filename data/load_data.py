@@ -4,6 +4,8 @@ import numpy as np
 import pretty_midi as pm
 from mido.midifiles.meta import KeySignatureError
 
+from streaming.midi_objects import MidiSong
+
 CHUNK_SIZE = 64
 
 BASE_DATA_PATH = "C:/One/CMU/DeepLearning/data"
@@ -54,7 +56,7 @@ def get_all_files(dataset_name="ADL"):
 def parse_midi(path):
     try:
         midi = pm.PrettyMIDI(path)
-    except KeySignatureError:
+    except FileNotFoundError | KeySignatureError:
         return None
     return midi
 
@@ -70,9 +72,8 @@ def load_pitch_data(use_cache=False):
         notes = []
         for instrument in midi.instruments:
             notes += instrument.notes
-        sorted_notes = sorted(notes, key=lambda note: note.start)
         # NOTE: THIS IS CREATING AN ONE-ELEMENT ARRAY, MIGHT BREAK THINGS
-        return [[note.pitch] for note in sorted_notes]
+        return [[note.pitch] for note in notes]
 
     paths = get_all_files(dataset_name="ADL")
     data = []
@@ -106,4 +107,4 @@ def split_chunks(to_split, chunk_size):
 
 
 if __name__ == "__main__":
-    pass
+    song = MidiSong.load(get_all_files()[0])
