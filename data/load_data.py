@@ -17,6 +17,14 @@ DATASET_INFO = {
     "ADL": {
         "path": "adl-piano-midi",
         "glob_params": "Classical/**/**/*.mid*"
+    },
+    "MOZART_SMALL": {
+        "path": "mozart",
+        "glob_params": "*.mid*"
+    },
+    "BEETHOVEN_SMALL": {
+        "path": "beeth",
+        "glob_params": "*.mid*"
     }
 }
 
