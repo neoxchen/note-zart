@@ -8,7 +8,7 @@ from streaming.midi_objects import MidiSong
 
 CHUNK_SIZE = 64
 
-BASE_DATA_PATH = "../../music"
+BASE_DATA_PATH = "C:/One/CMU/DeepLearning/data"
 DATASET_INFO = {
     "MAESTRO": {
         "path": "maestro-v3.0.0",
@@ -28,8 +28,8 @@ DATASET_INFO = {
     }
 }
 
-CACHE_PATH = "../../caches"
-TEMP_PATH = "../data/temp"
+CACHE_PATH = "C:/One/CMU/DeepLearning/note-zart/data/caches"
+TEMP_PATH = "C:/One/CMU/DeepLearning/note-zart/data/temp"
 
 
 def test_play(song):
