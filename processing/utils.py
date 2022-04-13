@@ -7,6 +7,7 @@
 import numpy as np
 import miditoolkit
 import numpy as np
+import json
 import copy
 
 # parameters for input
@@ -118,6 +119,12 @@ def group_items(items, max_time, ticks_per_bar=DEFAULT_RESOLUTION*4):
         overall = [db1] + insiders + [db2]
         groups.append(overall)
     return groups
+    
+def _try(o):     
+        try:         
+            return o.__dict__     
+        except:         
+            return str(o)
 
 # define "Event" for event storage
 class Event(object):
@@ -130,6 +137,15 @@ class Event(object):
     def __repr__(self):
         return 'Event(name={}, time={}, value={}, text={})'.format(
             self.name, self.time, self.value, self.text)
+
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+
+    def __lt__(self, other):
+        return self.__repr__() < other.__repr__()
+
+    def __hash__(self):
+        return hash(self.__repr__())
 
     def to_dict(self):
         return {
