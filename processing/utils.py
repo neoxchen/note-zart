@@ -7,8 +7,6 @@
 import numpy as np
 import miditoolkit
 import numpy as np
-import json
-import copy
 
 # parameters for input
 DEFAULT_VELOCITY_BINS = np.linspace(0, 128, 32+1, dtype=np.int)
@@ -119,12 +117,6 @@ def group_items(items, max_time, ticks_per_bar=DEFAULT_RESOLUTION*4):
         overall = [db1] + insiders + [db2]
         groups.append(overall)
     return groups
-    
-def _try(o):     
-        try:         
-            return o.__dict__     
-        except:         
-            return str(o)
 
 # define "Event" for event storage
 class Event(object):
@@ -146,17 +138,6 @@ class Event(object):
 
     def __hash__(self):
         return hash(self.__repr__())
-
-    def as_word(self):
-        return f"{self.name}_{self.value}"
-
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'time': self.time,
-            'value': self.value,
-            'test': self.text
-        }
 
 # item to event
 def item2event(groups):
