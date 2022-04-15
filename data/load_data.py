@@ -18,28 +18,49 @@ DATASET_INFO = {
         "path": "adl-piano-midi",
         "glob_params": "Classical/**/**/*.mid*"
     },
+<<<<<<< HEAD
 	"LMD": {
         "path": "lmd_matched",
         "glob_params": "*/*/*/*/*.mid"
+=======
+    "ADL_MOZART": {
+        "path": "adl-piano-midi",
+        "glob_params": "Classical/Classical/Wolfgang Amadeus Mozart/*.mid*"
+    },
+    "ADL_BEETHOVEN": {
+        "path": "adl-piano-midi",
+        "glob_params": "Classical/Classical/Ludwig van Beethoven/*.mid*"
+    },
+    "MOZART_SMALL": {
+        "path": "mozart",
+        "glob_params": "*.mid*"
+    },
+    "BEETHOVEN_SMALL": {
+        "path": "beeth",
+        "glob_params": "*.mid*"
+>>>>>>> 3f020ad1950af12176930477e8356cec25e751ba
     }
 }
 
 CACHE_PATH = "C:/One/CMU/DeepLearning/note-zart/data/caches"
+TEMP_PATH = "C:/One/CMU/DeepLearning/note-zart/data/temp"
 
 
-def test_play(file_name):
+def test_play(song):
     """
     Use the PyGame library to play the MIDI file (out loud)
     Args:
-        file_name (str): path to the MIDI file
+        song (MidiSong): song object
     """
     import pygame
+    path = f"{TEMP_PATH}/test_play.mid"
+    song.save(path)
 
-    print(f"Test playing MIDI file: {file_name}...")
+    print(f"Test playing MIDI song...")
     if not pygame.mixer.init():
         pygame.mixer.init()
     clock = pygame.time.Clock()
-    pygame.mixer.music.load(file_name)
+    pygame.mixer.music.load(path)
     pygame.mixer.music.play()
     while pygame.mixer.music.get_busy():
         clock.tick(30)
@@ -64,7 +85,7 @@ def get_all_files(dataset_name="LMD"):
 def parse_midi(path):
     try:
         midi = pm.PrettyMIDI(path)
-    except FileNotFoundError | KeySignatureError:
+    except OSError | KeySignatureError:
         return None
     return midi
 

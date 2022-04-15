@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Mac OS
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/
@@ -236,6 +239,10 @@ fabric.properties
 
 
 models/training_checkpoints/
-data/caches/
-output/
+data/caches/*
+!data/caches/.keep
+data/temp/*
+!data/temp/.keep
+output/*
+!output/.keep
 /models/saved_checkpoints/
