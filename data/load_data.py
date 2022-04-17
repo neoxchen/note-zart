@@ -18,11 +18,10 @@ DATASET_INFO = {
         "path": "adl-piano-midi",
         "glob_params": "Classical/**/**/*.mid*"
     },
-<<<<<<< HEAD
-	"LMD": {
+    "LMD": {
         "path": "lmd_matched",
         "glob_params": "*/*/*/*/*.mid"
-=======
+    },
     "ADL_MOZART": {
         "path": "adl-piano-midi",
         "glob_params": "Classical/Classical/Wolfgang Amadeus Mozart/*.mid*"
@@ -38,7 +37,6 @@ DATASET_INFO = {
     "BEETHOVEN_SMALL": {
         "path": "beeth",
         "glob_params": "*.mid*"
->>>>>>> 3f020ad1950af12176930477e8356cec25e751ba
     }
 }
 
@@ -66,7 +64,7 @@ def test_play(song):
         clock.tick(30)
 
 
-def get_all_files(dataset_name="LMD"):
+def get_all_files(dataset_name="ADL"):
     """
     Fetches all files from a particular dataset
     Args:
@@ -75,10 +73,6 @@ def get_all_files(dataset_name="LMD"):
         List(str): paths to the MIDI files
     """
     dataset_info = DATASET_INFO[dataset_name]
-    print("Enter the BASE_DATA_PATH")
-    base_data_path = input()
-    print(base_data_path)
-    BASE_DATA_PATH =base_data_path
     return glob.glob(f"{BASE_DATA_PATH}/{dataset_info['path']}/{dataset_info['glob_params']}")
 
 
