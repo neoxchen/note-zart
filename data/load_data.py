@@ -8,7 +8,7 @@ from streaming.midi_objects import MidiSong
 
 CHUNK_SIZE = 64
 
-BASE_DATA_PATH = "D:/CMU HW/17644"
+BASE_DATA_PATH = "C:/One/CMU/DeepLearning/data"
 DATASET_INFO = {
     "MAESTRO": {
         "path": "maestro-v3.0.0",
@@ -79,7 +79,9 @@ def get_all_files(dataset_name="ADL"):
 def parse_midi(path):
     try:
         midi = pm.PrettyMIDI(path)
-    except OSError | KeySignatureError:
+    except OSError:
+        return None
+    except KeySignatureError:
         return None
     return midi
 
@@ -114,6 +116,45 @@ def load_pitch_data(use_cache=False):
 
     data = np.array(data)
     with open(f"{CACHE_PATH}/pitch_only_chunk_{CHUNK_SIZE}.npy", "wb") as f:
+        np.save(f, data)
+    return data
+
+
+def load_note_data(dataset_name="ADL", max_sequence_length=64, use_cache=False):
+    if use_cache:
+        with open(f"{CACHE_PATH}/full.npy", "rb") as f:
+            data = np.load(f)
+        return data
+
+    def get_note_data(midi):
+        # Combine all instruments into one big note gallery for now
+        notes = []
+        note_count = 0
+        for instrument in midi.instruments:
+            prev_start = 0
+            for note in instrument.notes:
+                if note_count >= max_sequence_length:
+                    break
+                # Array: pitch, delay, duration
+                notes.append([note.pitch, note.start - prev_start, note.end - note.start])
+                prev_start = note.start
+                note_count += 1
+        if len(notes) < max_sequence_length:
+            return None
+        return np.array(notes)
+
+    paths = get_all_files(dataset_name=dataset_name)
+    data = []
+    for path in paths:
+        midi = parse_midi(path)
+        if not midi:
+            continue
+        notes = get_note_data(midi)
+        if notes is not None:
+            data.append(notes)
+
+    data = np.array(data)
+    with open(f"{CACHE_PATH}/full.npy", "wb") as f:
         np.save(f, data)
     return data
 

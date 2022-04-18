@@ -60,6 +60,17 @@ class MidiSong:
             offset += duration
         return song
 
+    @staticmethod
+    def from_full_note_array(note_array, normalize=128):
+        song = MidiSong()
+        # Create new MidiInstrument
+        instr = MidiInstrument(pretty_midi.program_to_instrument_name(0), "Acoustic Grand Piano")
+        offset = 0
+        for note in note_array:
+            song.add_note(instr, MidiNote(note[0] * normalize, offset, offset + note[2]))
+            offset += note[1]
+        return song
+
     def add_note(self, instrument, note):
         """
         Add a note by an instrument
