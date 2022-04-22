@@ -6,7 +6,6 @@
 
 import numpy as np
 import miditoolkit
-import numpy as np
 
 # parameters for input
 DEFAULT_VELOCITY_BINS = np.linspace(0, 128, 32+1, dtype=np.int)
@@ -139,7 +138,7 @@ class Event(object):
     def __hash__(self):
         return hash(self.__repr__())
 
-    def str_rep(self):
+    def to_key(self):
         return f"{self.name}_{self.value}"
 
 # item to event
