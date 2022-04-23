@@ -1,3 +1,9 @@
+# Code Library Adopted From:
+# Huang, Yu-Siang and Yang, Yi-Hsuan
+# Pop Music Transformer: Beat-Based Modeling and Generation of Expressive Pop Piano Compositions
+# Association for Computing Machinery
+# https://doi.org/10.1145/3394171.3413671
+
 import tensorflow as tf
 
 def embedding_lookup(lookup_table, x):
