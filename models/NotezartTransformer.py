@@ -17,9 +17,9 @@ class NotezartTransformer(object):
     ########################################
     # initialize
     ########################################
-    def __init__(self, checkpoint, is_training=False):
+    def __init__(self, checkpoint, dataset_name, is_training=False):
         # load dictionary
-        self.dictionary_path = '{}/dictionary/dictionary.pkl'.format(checkpoint)
+        self.dictionary_path = '{}/dictionary/dictionary_{}.pkl'.format(checkpoint, dataset_name)
         self.event2word, self.word2event = pickle.load(open(self.dictionary_path, 'rb'))
         # model settings
         self.x_len = 512
@@ -40,7 +40,7 @@ class NotezartTransformer(object):
             self.batch_size = 4
         else:
             self.batch_size = 1
-        self.checkpoint_path = '{}/base/model'.format(checkpoint)
+        self.checkpoint_path = '{}/base/model_{}'.format(checkpoint, dataset_name)
 
     ########################################
     # load model
@@ -291,7 +291,7 @@ class NotezartTransformer(object):
                     _, gs_, loss_, new_mem_ = self.sess.run([self.train_op, self.global_step, self.avg_loss, self.new_mem], feed_dict=feed_dict)
                     batch_m = new_mem_
                     total_loss.append(loss_)
-                    if gs_ % 100 == 0:
+                    if gs_ % 10 == 0:
                         print('>>> Epoch: {}, Step: {}, Loss: {:.5f}, Time: {:.2f}'.format(e, gs_, loss_, time.time()-st))
             # stop
             if np.mean(total_loss) <= 0.1:

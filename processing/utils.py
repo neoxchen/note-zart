@@ -1,4 +1,4 @@
-# Code Library Sourced From:
+# Code Library Adopted From:
 # Huang, Yu-Siang and Yang, Yi-Hsuan
 # Pop Music Transformer: Beat-Based Modeling and Generation of Expressive Pop Piano Compositions
 # Association for Computing Machinery
