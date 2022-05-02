@@ -1,5 +1,4 @@
 import pretty_midi
-from mido import KeySignatureError
 
 
 class MidiNote:
@@ -46,7 +45,7 @@ class MidiSong:
                 song.add_notes(instr, [MidiNote.from_note(note) for note in pm_instrument.notes])
 
             return song
-        except KeySignatureError | FileNotFoundError:
+        except:
             return None
 
     @staticmethod

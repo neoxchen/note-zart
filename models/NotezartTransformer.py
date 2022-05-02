@@ -108,7 +108,7 @@ class NotezartTransformer(object):
         if self.is_training:
             self.sess.run(tf.compat.v1.global_variables_initializer())
             self.saver.save(self.sess, self.checkpoint_path)
-        elif existing_model != None:
+        elif existing_model is not None:
             self.saver.restore(self.sess, existing_model)
         else:
             self.saver.restore(self.sess, self.checkpoint_path)
@@ -203,7 +203,7 @@ class NotezartTransformer(object):
             # sampling
             _logit = _logits[-1, 0]
             word = self.temperature_sampling(
-                logits=_logit, 
+                logits=_logit,
                 temperature=temperature,
                 topk=topk)
             words[0].append(word)
@@ -218,7 +218,7 @@ class NotezartTransformer(object):
                 words=words[0][original_length:],
                 word2event=self.word2event,
                 output_path=output_path,
-                prompt_path=prompt)
+                prompt_path=None)
         else:
             utils.write_midi(
                 words=words[0],
@@ -294,10 +294,11 @@ class NotezartTransformer(object):
                     if gs_ % 10 == 0:
                         print('>>> Epoch: {}, Step: {}, Loss: {:.5f}, Time: {:.2f}'.format(e, gs_, loss_, time.time()-st))
             # stop
-            if np.mean(total_loss) <= 0.1:
-                break
+            # if np.mean(total_loss) <= 0.1:
+            #     break
 
-        self.saver.save(self.sess, '{}/model-{:03d}-{:.3f}'.format(output_checkpoint_folder, e, np.mean(total_loss)))
+            if e % 10 == 0:
+                self.saver.save(self.sess, '{}/model-{:03d}-{:.3f}'.format(output_checkpoint_folder, e, np.mean(total_loss)))
 
     ########################################
     # close
